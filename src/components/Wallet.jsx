@@ -25,29 +25,31 @@ export default function Balance() {
             signatureList,
             { maxSupportedTransactionVersion: 0 }
         );
-        let data = [];
+        let data = {};
 
         transactionList.forEach((transaction, i) => {
             if (transaction.err == null) {
                 const transactionInstructions =
                     transactionDetails[i].transaction.message.instructions;
-
                 transactionInstructions.forEach((instruction, n) => {
-                    if (
-                        instruction.program == 'spl-token' &&
-                        instruction.parsed.info.mint == MINT_ADDRESS
-                    ) {
-                        const { source, tokenAmount } = instruction.parsed.info;
-                        const percentage = (
-                            (tokenAmount.uiAmount / totalToken) *
-                            100
-                        ).toFixed(2);
+                    if (instruction.program == 'spl-token') {
+                        const { source, amount, tokenAmount } =
+                            instruction.parsed.info;
+                        let amnt = data[source] ? data[source].amount : 0;
 
-                        data.push({
-                            source,
-                            amount: tokenAmount.uiAmount,
+                        if (amount) {
+                            amnt += Number(amount) / 10;
+                        } else {
+                            amnt += Number(tokenAmount.amount) / 10;
+                        }
+                        const percentage = ((amnt / totalToken) * 100).toFixed(
+                            2
+                        );
+
+                        data[source] = {
+                            amount: amnt,
                             percentage,
-                        });
+                        };
                     }
                 });
             }
@@ -67,13 +69,15 @@ export default function Balance() {
                     </tr>
                 </thead>
                 <tbody>
-                    {tableData?.map(({ source, amount, percentage }) => (
-                        <tr>
-                            <td>{source}</td>
-                            <td>{amount}</td>
-                            <td>{percentage}</td>
-                        </tr>
-                    ))}
+                    {tableData
+                        ? Object.keys(tableData).map((source) => (
+                              <tr>
+                                  <td>{source}</td>
+                                  <td>{tableData[source].amount}</td>
+                                  <td>{tableData[source].percentage}</td>
+                              </tr>
+                          ))
+                        : ''}
                 </tbody>
             </table>
         </div>
